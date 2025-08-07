@@ -415,42 +415,247 @@ export class CuuTruyenService implements OnModuleDestroy {
     //     return base64List;
     // }
 
+    // async extractBase64Images2(url) {
+    //     this.logger.log(`Extract img from ${url}`)
+    //     const browser = await puppeteer.launch({
+    //         executablePath: this.config.get<string>('CHROME_PATH'),
+    //         headless: true,
+    //         defaultViewport: null,
+    //         args: [
+    //             '--no-sandbox',
+    //             '--disable-setuid-sandbox',
+    //             '--disable-dev-shm-usage',
+    //             '--disable-web-security',
+    //             '--disable-features=VizDisplayCompositor',
+    //             '--no-first-run'
+    //         ]
+    //     });
+
+    //     const page = await browser.newPage();
+
+    //     // Prevent page from timing out or being destroyed
+    //     await page.setDefaultTimeout(0);
+    //     await page.setDefaultNavigationTimeout(0);
+
+    //     await page.evaluateOnNewDocument(() => {
+    //         localStorage.setItem('UIPreference3', 'classic');
+    //         localStorage.setItem('UIPreferenceConfirmed', 'true');
+    //     });
+
+    //     await page.goto(url, {
+    //         waitUntil: "networkidle0",
+    //         timeout: 0
+    //     });
+
+    //     let base64List: any[] = [];
+
+    //     try {
+    //         // Split the execution into smaller chunks to prevent context destruction
+    //         const setupResult = await page.evaluate(() => {
+    //             // Initial setup
+    //             ((document.querySelector("button.px-6.py-1.text-sm.bg-blue-800.font-bold.text-white")) as HTMLElement)?.click();
+    //             ((document.querySelector(".rounded-l-full.button-bare.text-white.h-8.text-xs.uppercase.font-bold.w-28.whitespace-nowrap")) as HTMLElement)?.click();
+
+    //             const total = document.querySelectorAll(".relative.w-full.h-auto").length;
+    //             window.scrollTo(0, document.body.scrollHeight);
+
+    //             return { total };
+    //         });
+
+    //         this.logger.log(`Total ${setupResult.total} pages`);
+    //         // Wait for elements to load
+    //         let loaded = 0;
+    //         while (loaded < setupResult.total) {
+    //             await new Promise(resolve => setTimeout(resolve, 1000));
+
+    //             loaded = await page.evaluate(() => {
+    //                 return document.querySelectorAll(".w-full.pointer-events-none.w-full").length;
+    //             });
+    //             this.logger.log(`Loaded ${loaded}/${setupResult.total} pages`);
+    //         }
+
+    //         // Process images one by one to avoid context destruction
+    //         for (let index = 0; index < setupResult.total; index++) {
+    //             try {
+    //                 const result: any = await page.evaluate(async (idx) => {
+    //                     const delay = (ms) => new Promise(res => setTimeout(res, ms));
+    //                     const elements = Array.from(document.querySelectorAll(".w-full.pointer-events-none.w-full"));
+
+    //                     if (idx >= elements.length) {
+    //                         return { success: false, error: 'Element not found' };
+    //                     }
+
+    //                     const t = elements[idx] as any;
+
+    //                     try {
+    //                         let response;
+    //                         for (let retries = 3; retries > 0; retries--) {
+    //                             try {
+    //                                 response = await fetch(t.__vue__.page.image_url, {
+    //                                     cache: "no-store",
+    //                                     headers: {
+    //                                         Origin: "https://kakarot.cuutruyen.net",
+    //                                         "Cache-Control": "no-cache",
+    //                                         Pragma: "no-cache"
+    //                                     }
+    //                                 });
+    //                                 if (response.ok) break;
+    //                             } catch (err) {
+    //                                 this.logger.error("Fetch error:", err);
+    //                                 if (retries === 1) throw err;
+    //                             }
+    //                         }
+
+    //                         const blob = await response.blob();
+    //                         const objectURL = URL.createObjectURL(blob);
+
+    //                         t.__vue__.page.image_url = objectURL;
+    //                         t.__vue__.image.src = objectURL;
+    //                         t.__vue__.image.crossOrigin = "anonymous";
+    //                         t.__vue__.destroyCanvas();
+
+    //                         return new Promise((resolve) => {
+    //                             const timeout = setTimeout(() => {
+    //                                 resolve({ success: false, error: 'Timeout' });
+    //                             }, 30000); // 30 second timeout per image
+
+    //                             t.__vue__.image.onload = async () => {
+    //                                 try {
+    //                                     t.__vue__.renderCanvas();
+    //                                     URL.revokeObjectURL(objectURL);
+
+    //                                     let attempts = 0;
+    //                                     while (t.toDataURL("image/png") === "data:," && attempts < 100) {
+    //                                         await delay(100);
+    //                                         attempts++;
+    //                                     }
+
+    //                                     if (attempts >= 100) {
+    //                                         clearTimeout(timeout);
+    //                                         resolve({ success: false, error: 'Canvas timeout' });
+    //                                         return;
+    //                                     }
+
+    //                                     t.toBlob((imgBlob) => {
+    //                                         if (!imgBlob) {
+    //                                             clearTimeout(timeout);
+    //                                             resolve({ success: false, error: 'No blob' });
+    //                                             return;
+    //                                         }
+
+    //                                         const reader = new FileReader();
+    //                                         reader.onloadend = () => {
+    //                                             clearTimeout(timeout);
+    //                                             resolve({
+    //                                                 success: true,
+    //                                                 data: reader.result,
+    //                                                 pageOrder: t.__vue__.page.order
+    //                                             });
+    //                                         };
+    //                                         reader.onerror = () => {
+    //                                             clearTimeout(timeout);
+    //                                             resolve({ success: false, error: 'FileReader error' });
+    //                                         };
+    //                                         reader.readAsDataURL(imgBlob);
+    //                                     });
+    //                                 } catch (err) {
+    //                                     clearTimeout(timeout);
+    //                                     resolve({ success: false, error: err.message });
+    //                                 }
+    //                             };
+
+    //                             t.__vue__.image.onerror = () => {
+    //                                 clearTimeout(timeout);
+    //                                 resolve({ success: false, error: 'Image load error' });
+    //                             };
+    //                         });
+
+    //                     } catch (err) {
+    //                         return { success: false, error: err.message };
+    //                     }
+    //                 }, index);
+
+    //                 if (result.success) {
+    //                     base64List[index] = result.data;
+    //                     this.logger.log(`✅ Processed page ${result.pageOrder} (${index + 1}/${setupResult.total})`);
+    //                 } else {
+    //                     this.logger.error(`❌ Failed page ${index + 1}:`, result.error);
+    //                     base64List[index] = null; // Keep array structure
+    //                 }
+
+    //                 // Small delay between processing to prevent overwhelming
+    //                 await new Promise(resolve => setTimeout(resolve, 100));
+
+    //             } catch (err) {
+    //                 this.logger.error(`Error processing page ${index + 1}:`, err);
+    //                 base64List[index] = null;
+
+    //                 // If we get a protocol error, try to recover
+    //                 if (err.message.includes('Protocol error') || err.message.includes('Execution context')) {
+    //                     this.logger.error('Attempting to recover from context error...');
+    //                     await new Promise(resolve => setTimeout(resolve, 2000));
+    //                 }
+    //             }
+    //         }
+
+    //     } catch (err) {
+    //         this.logger.error('Fatal error:', err);
+    //     } finally {
+    //         await browser.close();
+    //     }
+    //     this.logger.log("✅ All images processed.");
+    //     return base64List.filter(item => item !== null);
+    // }
+
     async extractBase64Images2(url) {
-        this.logger.log(`Extract img from ${url}`)
-        const browser = await puppeteer.launch({
-            headless: true,
-            defaultViewport: null,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-web-security',
-                '--disable-features=VizDisplayCompositor',
-                '--no-first-run'
-            ]
-        });
-
-        const page = await browser.newPage();
-
-        // Prevent page from timing out or being destroyed
-        await page.setDefaultTimeout(0);
-        await page.setDefaultNavigationTimeout(0);
-
-        await page.evaluateOnNewDocument(() => {
-            localStorage.setItem('UIPreference3', 'classic');
-            localStorage.setItem('UIPreferenceConfirmed', 'true');
-        });
-
-        await page.goto(url, {
-            waitUntil: "networkidle0",
-            timeout: 0
-        });
-
+        this.logger.log(`Extract img from ${url}`);
+        let browser = null as any;
+        let page = null as any;
         let base64List: any[] = [];
 
+
         try {
+            browser = await puppeteer.launch({
+                executablePath: this.config.get<string>('CHROME_PATH'),
+                headless: true,
+                defaultViewport: null,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-web-security',
+                    '--disable-features=VizDisplayCompositor',
+                    '--no-first-run',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-renderer-backgrounding'
+                ]
+            });
+
+            page = await browser.newPage();
+
+            // Set longer timeouts and prevent page destruction
+            await page.setDefaultTimeout(60000); // 60 seconds
+            await page.setDefaultNavigationTimeout(60000);
+
+            // Prevent the page from being garbage collected
+            await page.evaluateOnNewDocument(() => {
+                localStorage.setItem('UIPreference3', 'classic');
+                localStorage.setItem('UIPreferenceConfirmed', 'true');
+
+                // Keep page alive
+                (window as any).keepAlive = setInterval(() => {
+                    console.log('keepAlive');
+                }, 30000);
+            });
+
+            await page.goto(url, {
+                waitUntil: "networkidle0",
+                timeout: 60000
+            });
+
             // Split the execution into smaller chunks to prevent context destruction
-            const setupResult = await page.evaluate(() => {
+            const setupResult = await this.safeEvaluate(page, () => {
                 // Initial setup
                 ((document.querySelector("button.px-6.py-1.text-sm.bg-blue-800.font-bold.text-white")) as HTMLElement)?.click();
                 ((document.querySelector(".rounded-l-full.button-bare.text-white.h-8.text-xs.uppercase.font-bold.w-28.whitespace-nowrap")) as HTMLElement)?.click();
@@ -461,149 +666,294 @@ export class CuuTruyenService implements OnModuleDestroy {
                 return { total };
             });
 
-            this.logger.log(`Total ${setupResult.total} pages`);
-            // Wait for elements to load
-            let loaded = 0;
-            while (loaded < setupResult.total) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                loaded = await page.evaluate(() => {
-                    return document.querySelectorAll(".w-full.pointer-events-none.w-full").length;
-                });
-                this.logger.log(`Loaded ${loaded}/${setupResult.total} pages`);
+            if (!setupResult) {
+                throw new Error('Failed to setup page');
             }
 
-            // Process images one by one to avoid context destruction
-            for (let index = 0; index < setupResult.total; index++) {
-                try {
-                    const result: any = await page.evaluate(async (idx) => {
-                        const delay = (ms) => new Promise(res => setTimeout(res, ms));
-                        const elements = Array.from(document.querySelectorAll(".w-full.pointer-events-none.w-full"));
+            this.logger.log(`Total ${setupResult.total} pages`);
 
-                        if (idx >= elements.length) {
-                            return { success: false, error: 'Element not found' };
-                        }
+            // Wait for elements to load with better error handling
+            let loaded = 0;
+            let retryCount = 0;
+            const maxRetries = 10;
 
-                        const t = elements[idx] as any;
+            while (loaded < setupResult.total && retryCount < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
 
-                        try {
-                            let response;
-                            for (let retries = 3; retries > 0; retries--) {
-                                try {
-                                    response = await fetch(t.__vue__.page.image_url, {
-                                        cache: "no-store",
-                                        headers: {
-                                            Origin: "https://kakarot.cuutruyen.net",
-                                            "Cache-Control": "no-cache",
-                                            Pragma: "no-cache"
-                                        }
-                                    });
-                                    if (response.ok) break;
-                                } catch (err) {
-                                    this.logger.error("Fetch error:", err);
-                                    if (retries === 1) throw err;
-                                }
+                const loadedResult = await this.safeEvaluate(page, () => {
+                    return document.querySelectorAll(".w-full.pointer-events-none.w-full").length;
+                });
+
+                if (loadedResult !== null) {
+                    loaded = loadedResult;
+                    this.logger.log(`Loaded ${loaded}/${setupResult.total} pages`);
+                    retryCount = 0; // Reset retry count on success
+                } else {
+                    retryCount++;
+                    this.logger.warn(`Failed to get loaded count, retry ${retryCount}/${maxRetries}`);
+                }
+            }
+
+            if (loaded < setupResult.total) {
+                this.logger.warn(`Only loaded ${loaded}/${setupResult.total} pages, proceeding anyway`);
+            }
+
+            // Process images with better error recovery
+            for (let index = 0; index < Math.min(loaded, setupResult.total); index++) {
+                let success = false;
+                let attempts = 0;
+                const maxAttempts = 3;
+
+                while (!success && attempts < maxAttempts) {
+                    try {
+                        attempts++;
+                        this.logger.log(`Processing page ${index + 1}/${setupResult.total} (attempt ${attempts})`);
+
+                        const result: any = await this.safeEvaluate(page, async (idx) => {
+                            const delay = (ms) => new Promise(res => setTimeout(res, ms));
+                            const elements = Array.from(document.querySelectorAll(".w-full.pointer-events-none.w-full"));
+
+                            if (idx >= elements.length) {
+                                return { success: false, error: 'Element not found' };
                             }
 
-                            const blob = await response.blob();
-                            const objectURL = URL.createObjectURL(blob);
+                            const t = elements[idx] as any;
 
-                            t.__vue__.page.image_url = objectURL;
-                            t.__vue__.image.src = objectURL;
-                            t.__vue__.image.crossOrigin = "anonymous";
-                            t.__vue__.destroyCanvas();
+                            try {
+                                // Check if Vue instance exists
+                                if (!t.__vue__ || !t.__vue__.page || !t.__vue__.page.image_url) {
+                                    return { success: false, error: 'Vue instance or image URL not found' };
+                                }
 
-                            return new Promise((resolve) => {
-                                const timeout = setTimeout(() => {
-                                    resolve({ success: false, error: 'Timeout' });
-                                }, 30000); // 30 second timeout per image
-
-                                t.__vue__.image.onload = async () => {
+                                let response;
+                                for (let retries = 3; retries > 0; retries--) {
                                     try {
-                                        t.__vue__.renderCanvas();
+                                        response = await fetch(t.__vue__.page.image_url, {
+                                            cache: "no-store",
+                                            headers: {
+                                                Origin: "https://kakarot.cuutruyen.net",
+                                                "Cache-Control": "no-cache",
+                                                Pragma: "no-cache"
+                                            }
+                                        });
+                                        if (response.ok) break;
+                                        await delay(1000);
+                                    } catch (err) {
+                                        console.error("Fetch error:", err);
+                                        if (retries === 1) throw err;
+                                        await delay(1000);
+                                    }
+                                }
+
+                                if (!response || !response.ok) {
+                                    return { success: false, error: 'Failed to fetch image' };
+                                }
+
+                                const blob = await response.blob();
+                                const objectURL = URL.createObjectURL(blob);
+
+                                t.__vue__.page.image_url = objectURL;
+                                t.__vue__.image.src = objectURL;
+                                t.__vue__.image.crossOrigin = "anonymous";
+
+                                if (t.__vue__.destroyCanvas) {
+                                    t.__vue__.destroyCanvas();
+                                }
+
+                                return new Promise((resolve) => {
+                                    const timeout = setTimeout(() => {
                                         URL.revokeObjectURL(objectURL);
+                                        resolve({ success: false, error: 'Timeout' });
+                                    }, 45000); // 45 second timeout per image
 
-                                        let attempts = 0;
-                                        while (t.toDataURL("image/png") === "data:," && attempts < 100) {
-                                            await delay(100);
-                                            attempts++;
-                                        }
+                                    const onLoad = async () => {
+                                        try {
+                                            if (t.__vue__.renderCanvas) {
+                                                t.__vue__.renderCanvas();
+                                            }
 
-                                        if (attempts >= 100) {
-                                            clearTimeout(timeout);
-                                            resolve({ success: false, error: 'Canvas timeout' });
-                                            return;
-                                        }
+                                            let attempts = 0;
+                                            while (t.toDataURL("image/png") === "data:," && attempts < 50) {
+                                                await delay(200);
+                                                attempts++;
+                                            }
 
-                                        t.toBlob((imgBlob) => {
-                                            if (!imgBlob) {
+                                            if (attempts >= 50) {
                                                 clearTimeout(timeout);
-                                                resolve({ success: false, error: 'No blob' });
+                                                URL.revokeObjectURL(objectURL);
+                                                resolve({ success: false, error: 'Canvas render timeout' });
                                                 return;
                                             }
 
-                                            const reader = new FileReader();
-                                            reader.onloadend = () => {
+                                            t.toBlob((imgBlob) => {
                                                 clearTimeout(timeout);
-                                                resolve({
-                                                    success: true,
-                                                    data: reader.result,
-                                                    pageOrder: t.__vue__.page.order
-                                                });
-                                            };
-                                            reader.onerror = () => {
-                                                clearTimeout(timeout);
-                                                resolve({ success: false, error: 'FileReader error' });
-                                            };
-                                            reader.readAsDataURL(imgBlob);
-                                        });
-                                    } catch (err) {
+                                                URL.revokeObjectURL(objectURL);
+
+                                                if (!imgBlob) {
+                                                    resolve({ success: false, error: 'No blob generated' });
+                                                    return;
+                                                }
+
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => {
+                                                    resolve({
+                                                        success: true,
+                                                        data: reader.result,
+                                                        pageOrder: t.__vue__.page.order || idx
+                                                    });
+                                                };
+                                                reader.onerror = () => {
+                                                    resolve({ success: false, error: 'FileReader error' });
+                                                };
+                                                reader.readAsDataURL(imgBlob);
+                                            }, "image/png", 0.95);
+                                        } catch (err) {
+                                            clearTimeout(timeout);
+                                            URL.revokeObjectURL(objectURL);
+                                            resolve({ success: false, error: err.message });
+                                        }
+                                    };
+
+                                    const onError = () => {
                                         clearTimeout(timeout);
-                                        resolve({ success: false, error: err.message });
-                                    }
-                                };
+                                        URL.revokeObjectURL(objectURL);
+                                        resolve({ success: false, error: 'Image load error' });
+                                    };
 
-                                t.__vue__.image.onerror = () => {
-                                    clearTimeout(timeout);
-                                    resolve({ success: false, error: 'Image load error' });
-                                };
-                            });
+                                    t.__vue__.image.onload = onLoad;
+                                    t.__vue__.image.onerror = onError;
+                                });
 
-                        } catch (err) {
-                            return { success: false, error: err.message };
+                            } catch (err) {
+                                return { success: false, error: err.message };
+                            }
+                        }, index);
+
+                        if (result && result.success) {
+                            base64List[index] = result.data;
+                            this.logger.log(`✅ Processed page ${result.pageOrder} (${index + 1}/${setupResult.total})`);
+                            success = true;
+                        } else {
+                            const errorMsg = result ? result.error : 'Unknown error';
+                            this.logger.error(`❌ Failed page ${index + 1} (attempt ${attempts}):`, errorMsg);
+
+                            if (attempts < maxAttempts) {
+                                // Wait before retry
+                                await new Promise(resolve => setTimeout(resolve, 2000));
+                            } else {
+                                base64List[index] = null; // Mark as failed after all attempts
+                            }
                         }
-                    }, index);
 
-                    if (result.success) {
-                        base64List[index] = result.data;
-                        this.logger.log(`✅ Processed page ${result.pageOrder} (${index + 1}/${setupResult.total})`);
-                    } else {
-                        this.logger.error(`❌ Failed page ${index + 1}:`, result.error);
-                        base64List[index] = null; // Keep array structure
-                    }
+                        // Small delay between processing
+                        await new Promise(resolve => setTimeout(resolve, 500));
 
-                    // Small delay between processing to prevent overwhelming
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    } catch (err) {
+                        this.logger.error(`Error processing page ${index + 1} (attempt ${attempts}):`, err);
 
-                } catch (err) {
-                    this.logger.error(`Error processing page ${index + 1}:`, err);
-                    base64List[index] = null;
+                        // Check if it's a context destruction error
+                        if (err.message.includes('Protocol error') ||
+                            err.message.includes('Execution context') ||
+                            err.message.includes('Cannot find context')) {
 
-                    // If we get a protocol error, try to recover
-                    if (err.message.includes('Protocol error') || err.message.includes('Execution context')) {
-                        this.logger.error('Attempting to recover from context error...');
-                        await new Promise(resolve => setTimeout(resolve, 2000));
+                            this.logger.error('Context destroyed, attempting recovery...');
+
+                            // Try to recover by creating a new page
+                            try {
+                                if (page && !page.isClosed()) {
+                                    await page.close();
+                                }
+
+                                page = await browser.newPage();
+                                await page.setDefaultTimeout(60000);
+                                await page.setDefaultNavigationTimeout(60000);
+
+                                await page.evaluateOnNewDocument(() => {
+                                    localStorage.setItem('UIPreference3', 'classic');
+                                    localStorage.setItem('UIPreferenceConfirmed', 'true');
+                                });
+
+                                await page.goto(url, {
+                                    waitUntil: "networkidle0",
+                                    timeout: 60000
+                                });
+
+                                // Re-setup the page
+                                await this.safeEvaluate(page, () => {
+                                    ((document.querySelector("button.px-6.py-1.text-sm.bg-blue-800.font-bold.text-white")) as HTMLElement)?.click();
+                                    ((document.querySelector(".rounded-l-full.button-bare.text-white.h-8.text-xs.uppercase.font-bold.w-28.whitespace-nowrap")) as HTMLElement)?.click();
+                                    window.scrollTo(0, document.body.scrollHeight);
+                                });
+
+                                // Wait for page to stabilize
+                                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                                this.logger.log('Recovery successful, continuing...');
+                            } catch (recoveryErr) {
+                                this.logger.error('Recovery failed:', recoveryErr);
+                                break; // Exit the processing loop
+                            }
+                        }
+
+                        if (attempts >= maxAttempts) {
+                            base64List[index] = null;
+                        }
                     }
                 }
             }
 
         } catch (err) {
             this.logger.error('Fatal error:', err);
+            throw err;
         } finally {
-            await browser.close();
+            try {
+                if (page && !page.isClosed()) {
+                    await page.evaluate(() => {
+                        if ((window as any).keepAlive) {
+                            clearInterval((window as any).keepAlive);
+                        }
+                    }).catch(() => { }); // Ignore errors when clearing keepAlive
+                    await page.close();
+                }
+                if (browser) {
+                    await browser.close();
+                }
+            } catch (closeErr) {
+                this.logger.error('Error closing browser:', closeErr);
+            }
         }
+
         this.logger.log("✅ All images processed.");
         return base64List.filter(item => item !== null);
+    }
+
+    // Helper method to safely evaluate code in the page context
+    private async safeEvaluate(page: any, func: Function, ...args: any[]): Promise<any> {
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                return await page.evaluate(func, ...args);
+            } catch (err) {
+                retries--;
+                if (err.message.includes('Protocol error') ||
+                    err.message.includes('Execution context') ||
+                    err.message.includes('Cannot find context')) {
+
+                    if (retries > 0) {
+                        this.logger.warn(`Context error, retrying... (${retries} attempts left)`);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        continue;
+                    }
+                }
+
+                if (retries === 0) {
+                    this.logger.error('SafeEvaluate failed after retries:', err);
+                    return null;
+                }
+                throw err;
+            }
+        }
+        return null;
     }
 
 
