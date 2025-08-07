@@ -616,7 +616,6 @@ export class CuuTruyenService implements OnModuleDestroy {
 
         try {
             browser = await puppeteer.launch({
-                executablePath: this.config.get<string>('CHROME_PATH'),
                 headless: true,
                 defaultViewport: null,
                 args: [
