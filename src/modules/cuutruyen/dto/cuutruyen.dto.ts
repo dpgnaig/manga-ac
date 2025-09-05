@@ -1,10 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CuuTruyenDto {
-    @ApiProperty({ example: '2637' })
-    manga_id: string;
-    @ApiProperty({ example: '49897' })
-    chapter_id: string;
+    @ApiProperty({ example: 2637 })
+    manga_id: number;
+    @ApiProperty({ example: 49897 })
+    chapter_id: number;
+    @ApiProperty({ example: '9b6918362f' })
+    process_id: string;
 }
 
 export class CuuTruyenDurationDto {

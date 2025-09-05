@@ -1,35 +1,38 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
 import open from 'open';
+import compression from 'compression';
 
 async function bootstrap() {
-  // const httpsOptions = {
-  //   key: fs.readFileSync('server.key'),
-  //   cert: fs.readFileSync('server.cert'),
-  // };
-
-
   const app = await NestFactory.create(AppModule);
+
+  app.use(
+    compression({
+      filter: (req, res) => {
+        // ❌ Don't compress images (prevents ERR_CONTENT_LENGTH_MISMATCH)
+        if (/\.(jpe?g|png|gif|webp)$/i.test(req.url)) {
+          return false;
+        }
+        return compression.filter(req, res);
+      },
+      threshold: 1024, // only compress responses > 1kb
+    }),
+  );
+
+  const configService = app.get(ConfigService);
 
   app.enableCors({
     origin: true, // Allow all origins for testing
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Manga-Source', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Manga-Source', 'X-Requested-With', 'Cache-Control', 'Pragma', 'Expires'],
     credentials: true,
   });
 
-  // app.useGlobalPipes(
-  //   new ValidationPipe({
-  //     whitelist: true, // strips unknown properties
-  //     transform: true, // enables auto-conversion (e.g. strings to numbers)
-  //   }),
-  // );
-
   const config = new DocumentBuilder()
-    .setTitle('My API')
-    .setDescription('The API description')
+    .setTitle('Truyện Ăn Cắp API')
+    .setDescription('Bố mày đi ăn cắp ở trang khác đấy ý kiến cốn lài')
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -47,10 +50,10 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document); // Swagger UI at /api
 
-  const port = 3000;
+  const port = configService.get<number>('PORT') || 3000;
   await app.listen(port);
 
-  await open(`http://localhost:${port}/swagger`);
+  // await open(`http://localhost:${port}/swagger`);
 }
 
 bootstrap();

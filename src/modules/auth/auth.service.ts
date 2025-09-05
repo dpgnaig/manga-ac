@@ -40,6 +40,8 @@ export class AuthService {
         const isMatch = await bcrypt.compare(loginDto.password, user.password);
         if (!isMatch) throw new UnauthorizedException('Invalid credentials');
 
+        await this.usersService.updateLoginAt(user._id);
+
         const payload = {
             sub: user._id,
             email: user.email,

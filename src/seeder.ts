@@ -13,12 +13,12 @@ async function bootstrap() {
     const existing = await usersService.findByEmail(adminEmail);
 
     if (!existing) {
-        const hashedPassword = await bcrypt.hash('Giangtez@123', 10);
+        const hashedPassword = await bcrypt.hash('DucG1@ng', 10);
 
         await usersService.create({
             email: adminEmail,
             password: hashedPassword,
-            name: 'Super Admin',
+            name: 'Phó Đức Giang',
             roles: [Role.Administrator],
         });
 
